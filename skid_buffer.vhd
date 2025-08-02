@@ -27,7 +27,7 @@ signal r_valid : std_logic := '0';--its necessary to have this signal or we coul
 
 begin
 
-process ( clk , rst )	
+process ( clk , rst )	--here everything registered 
 begin
 	if rising_edge ( clk ) then
 		if i_ready = '1' and i_valid = '1' and r_valid = '0' then --we use r_Valid also as a flag to note if we are on stall or not
@@ -53,22 +53,30 @@ begin
 		end if;
 	end if;
 end process;
+/*
+More Elegant way, having a registerd Ready while the o_valid and o_data not registered
 
 process ( clk , rst )
+begin
 	if rising_Edge ( clk ) then
 		if i_Ready = '0' and i_Valid = '1' and r_valid = '0' then	
 				r_valid <= '1';
-		else if i_ready = '1' and i_Valid = '1' and r_valid = '1' then
+		else if i_Ready = '1' then -- else if i_ready = '1' and i_Valid = '1' and r_valid = '1' then, cuz we say if i_ready then put the r_Valid to 0 because we flushed , otherwise we may had issues on deadlock if the master deasserted the valid, the r_Valid would continue stayin high and 
 				r_valid <= '0';
 		end if;
 	end if;
 end process;
-				
+
+o_data <= i_data when r_Valid = '0' else
+			r_data;
+process ( clk ) begin
+if rising_Edge ( clk ) then
+	o_Valid <= r_Valid or i_valid;
+end if;
+end process;
+
+o_ready <= not r_valid ; -- cuz we need to register the o_ready somewhere to not have a long combinatorial logic, makes sense
+
+This should work fine
+*/	
 ====
-if (!o_valid || i_ready)
-    o_valid <= i_valid || r_valid
-====
-
-
-
-end architecture rtl;
